@@ -3,7 +3,8 @@ import {
   Events, 
   GuildMember,
   TextChannel,
-  ChannelType
+  ChannelType,
+  GatewayIntentBits
 } from 'discord.js';
 import { log } from '../vite';
 import { type DiscordConfig } from '@shared/schema';
@@ -12,18 +13,28 @@ import { type DiscordConfig } from '@shared/schema';
  * Setup event handlers for the Discord bot
  */
 export function setupEvents(client: Client, config: DiscordConfig) {
-  // NOTE: GuildMemberAdd event requires privileged GuildMembers intent
-  // So we don't register it here, but the handler code is kept for reference
+  // Register the GuildMemberAdd event - requires privileged GuildMembers intent
+  client.on(Events.GuildMemberAdd, (member) => handleMemberJoin(member, config));
   
   // Log when the bot is ready
   client.once(Events.ClientReady, (readyClient) => {
     log(`Bot is online as ${readyClient.user.tag}`, 'discord');
     
-    // Inform about welcome message functionality
-    log(`Welcome message functionality is ready but requires the GuildMembers privileged intent to be enabled in Discord Developer Portal`, 'discord');
+    // Log event setup status
+    log(`Welcome message event handler is active and waiting for new members`, 'discord');
     
-    // Log message about how to enable privileged intents
-    log(`To enable privileged intents like GuildMembers and MessageContent, go to Discord Developer Portal, select your application, go to the Bot section, and enable the required intents under "Privileged Gateway Intents"`, 'discord');
+    // Log current welcome message
+    const welcomeMessage = config.customSettings?.welcomeMessage || config.welcomeMessage;
+    log(`Current welcome message: "${welcomeMessage}"`, 'discord');
+    
+    // Check if we have the proper intents
+    const hasGuildMembersIntent = readyClient.options.intents.has(GatewayIntentBits.GuildMembers);
+    if (!hasGuildMembersIntent) {
+      log(`WARNING: GuildMembers intent appears to be missing. Welcome messages may not work.`, 'discord');
+      log(`To enable privileged intents, go to Discord Developer Portal → Bot section → Privileged Gateway Intents`, 'discord');
+    } else {
+      log(`GuildMembers intent is enabled. Welcome messages should work properly.`, 'discord');
+    }
   });
 
   // Log errors
@@ -39,25 +50,69 @@ export function setupEvents(client: Client, config: DiscordConfig) {
  */
 async function handleMemberJoin(member: GuildMember, config: DiscordConfig) {
   try {
-    log(`New member joined: ${member.user.tag}`, 'discord');
+    log(`New member joined: ${member.user.tag} (${member.user.id}) in ${member.guild.name}`, 'discord');
     
-    // Find the first available text channel to send the welcome message
-    const channel = member.guild.channels.cache.find(
-      (ch) => ch.type === ChannelType.GuildText && 
-              (ch as TextChannel).permissionsFor(member.guild.members.me!)?.has('SendMessages')
-    ) as TextChannel;
+    // Try to find the best channel for sending welcome messages
+    let welcomeChannel: TextChannel | null = null;
     
-    if (!channel) {
-      log(`Could not find a suitable channel to send welcome message in ${member.guild.name}`, 'discord');
+    // First, look for channels with "welcome" in the name
+    welcomeChannel = member.guild.channels.cache.find(
+      (ch) => 
+        ch.type === ChannelType.GuildText && 
+        (ch.name.toLowerCase().includes('welcome') || ch.name.toLowerCase().includes('lobby')) &&
+        (ch as TextChannel).permissionsFor(member.guild.members.me!)?.has('SendMessages')
+    ) as TextChannel || null;
+    
+    // If no welcome channel found, try general channel
+    if (!welcomeChannel) {
+      welcomeChannel = member.guild.channels.cache.find(
+        (ch) => 
+          ch.type === ChannelType.GuildText && 
+          (ch.name.toLowerCase().includes('general') || ch.name.toLowerCase().includes('chat')) &&
+          (ch as TextChannel).permissionsFor(member.guild.members.me!)?.has('SendMessages')
+      ) as TextChannel || null;
+    }
+    
+    // If still no channel found, find any text channel we can send to
+    if (!welcomeChannel) {
+      welcomeChannel = member.guild.channels.cache.find(
+        (ch) => 
+          ch.type === ChannelType.GuildText && 
+          (ch as TextChannel).permissionsFor(member.guild.members.me!)?.has('SendMessages')
+      ) as TextChannel || null;
+    }
+    
+    if (!welcomeChannel) {
+      log(`Could not find any suitable channel to send welcome message in ${member.guild.name}`, 'discord');
       return;
     }
     
-    // Send the welcome message (use custom message if available)
-    const welcomeMessage = config.customSettings?.welcomeMessage || config.welcomeMessage;
-    await channel.send(`${member} ${welcomeMessage}`);
-    log(`Sent welcome message to ${member.user.tag} in ${member.guild.name}: "${welcomeMessage}"`, 'discord');
+    log(`Selected channel for welcome message: #${welcomeChannel.name}`, 'discord');
     
+    // Get the welcome message (use custom message if available)
+    const welcomeMessage = config.customSettings?.welcomeMessage || config.welcomeMessage;
+    
+    // Advanced welcome message with emoji support
+    try {
+      // Send the welcome message with member mention
+      await welcomeChannel.send({
+        content: `${member} ${welcomeMessage}`,
+        allowedMentions: { users: [member.id] }
+      });
+      
+      log(`Successfully sent welcome message to ${member.user.tag} in #${welcomeChannel.name}`, 'discord');
+    } catch (sendError) {
+      log(`Error sending formatted welcome message: ${sendError}`, 'discord');
+      
+      // Fallback to plain text if there's an issue with emoji rendering
+      try {
+        await welcomeChannel.send(`<@${member.id}> Welcome to the server!`);
+        log(`Sent fallback welcome message`, 'discord');
+      } catch (fallbackError) {
+        log(`Failed to send even fallback message: ${fallbackError}`, 'discord');
+      }
+    }
   } catch (error) {
-    log(`Error sending welcome message: ${error}`, 'discord');
+    log(`Error in welcome message handler: ${error}`, 'discord');
   }
 }

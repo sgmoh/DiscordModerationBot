@@ -24,8 +24,11 @@ export async function initializeBot(config: DiscordConfig) {
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,  // Privileged intent - needed for purge command
-        GatewayIntentBits.GuildMembers     // Privileged intent - needed for welcome messages
+        GatewayIntentBits.GuildMembers,     // IMPORTANT: Privileged intent - needed for welcome messages
+        GatewayIntentBits.MessageContent,   // IMPORTANT: Privileged intent - needed for purge command
+        // Additional intents that might be helpful
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildEmojisAndStickers
       ]
     });
 
