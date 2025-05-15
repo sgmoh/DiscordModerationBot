@@ -8,6 +8,32 @@ import { log } from '../vite';
 import { type DiscordConfig } from '@shared/schema';
 
 /**
+ * Process custom emoji codes in a string, ensuring they render correctly
+ */
+function processCustomEmojis(text: string): string {
+  // Fix broken backslashes and formatting
+  let processed = text;
+  
+  // Match custom emoji format <:name:id> or similar formats
+  const emojiRegex = /<(a?):([a-zA-Z0-9_]+):(\d+)>/g;
+  
+  // Replace any escaped format with the correct format
+  processed = processed.replace(/\\?<:([a-zA-Z0-9_]+):(\d+)\\?>/g, '<:$1:$2>');
+  
+  // Also check for text versions like :emojiname:
+  processed = processed.replace(/:([a-zA-Z0-9_]+):/g, (match, name) => {
+    // If it's already part of a custom emoji format, leave it alone
+    if (processed.includes(`<:${name}:`)) {
+      return match;
+    }
+    // Otherwise, it might be a regular emoji reference
+    return match;
+  });
+  
+  return processed;
+}
+
+/**
  * Command to set a custom welcome message
  */
 export async function handleSetWelcomeCommand(message: Message, args: string[], config: DiscordConfig) {
