@@ -94,9 +94,9 @@ async function handleMemberJoin(member: GuildMember, config: DiscordConfig) {
     
     // Advanced welcome message with emoji support
     try {
-      // Send the welcome message with member mention
+      // Method 1: Send the welcome message with proper emoji rendering
       await welcomeChannel.send({
-        content: `${member} ${welcomeMessage}`,
+        content: `<@${member.id}> ${welcomeMessage}`,
         allowedMentions: { users: [member.id] }
       });
       
@@ -104,7 +104,7 @@ async function handleMemberJoin(member: GuildMember, config: DiscordConfig) {
     } catch (sendError) {
       log(`Error sending formatted welcome message: ${sendError}`, 'discord');
       
-      // Fallback to plain text if there's an issue with emoji rendering
+      // Fallback to plain text if there's an issue
       try {
         await welcomeChannel.send(`<@${member.id}> Welcome to the server!`);
         log(`Sent fallback welcome message`, 'discord');

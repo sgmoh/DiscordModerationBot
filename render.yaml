@@ -2,7 +2,7 @@ services:
   - type: web
     name: discord-bot
     env: node
-    buildCommand: npm install
+    buildCommand: bash ./render-build.sh
     startCommand: npm run start
     envVars:
       - key: DISCORD_BOT_TOKEN
@@ -11,4 +11,5 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
-    healthCheckPath: /health
+    healthCheckPath: /api/health
+    plan: free

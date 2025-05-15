@@ -1,6 +1,8 @@
 import { 
   Message, 
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  TextChannel,
+  ChannelType
 } from 'discord.js';
 import { log } from '../vite';
 import { type DiscordConfig } from '@shared/schema';
@@ -30,11 +32,29 @@ export async function handleSetWelcomeCommand(message: Message, args: string[], 
       return;
     }
     
-    // Update the welcome message in the config
+    // Store the raw welcome message in the config
     config.customSettings.welcomeMessage = newWelcomeMessage;
     
-    // Send confirmation
-    await message.reply(`✅ Welcome message updated to: "${newWelcomeMessage}"`);
+    // Make sure we're in a text channel
+    if (message.channel.type !== ChannelType.GuildText) {
+      await message.reply('⚠️ This command works best in a regular text channel.');
+      return;
+    }
+    
+    const textChannel = message.channel as TextChannel;
+    
+    // Send confirmation with properly rendered emoji
+    await textChannel.send({
+      content: `✅ Welcome message updated! New members will see:`,
+      allowedMentions: { parse: [] }
+    });
+    
+    // Send a preview of how the welcome message will appear
+    await textChannel.send({
+      content: `<@${message.author.id}> ${newWelcomeMessage}`,
+      allowedMentions: { users: [message.author.id] }
+    });
+    
     log(`Welcome message updated to: "${newWelcomeMessage}" by ${message.author.tag}`, 'discord');
     
   } catch (error) {
@@ -51,8 +71,25 @@ export async function handleGetWelcomeCommand(message: Message, config: DiscordC
     // Get the current welcome message
     const currentMessage = config.customSettings.welcomeMessage;
     
-    // Send the current welcome message
-    await message.reply(`📢 Current welcome message: "${currentMessage}"`);
+    // Make sure we're in a text channel
+    if (message.channel.type !== ChannelType.GuildText) {
+      await message.reply('⚠️ This command works best in a regular text channel.');
+      return;
+    }
+    
+    const textChannel = message.channel as TextChannel;
+    
+    // Send info message
+    await textChannel.send({
+      content: `📢 Current welcome message:`,
+      allowedMentions: { parse: [] }
+    });
+    
+    // Send preview of the actual welcome message as it will appear with emojis properly rendered
+    await textChannel.send({
+      content: `<@${message.author.id}> ${currentMessage}`,
+      allowedMentions: { users: [message.author.id] }
+    });
     
   } catch (error) {
     log(`Error in getwelcome command: ${error}`, 'discord');
