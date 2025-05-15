@@ -20,6 +20,9 @@ export function setupEvents(client: Client, config: DiscordConfig) {
   client.once(Events.ClientReady, (readyClient) => {
     log(`Bot is online as ${readyClient.user.tag}`, 'discord');
     
+    // Set watching status
+    readyClient.user.setActivity('immy server', { type: 3 }); // Type 3 is 'WATCHING'
+    
     // Log event setup status
     log(`Welcome message event handler is active and waiting for new members`, 'discord');
     
