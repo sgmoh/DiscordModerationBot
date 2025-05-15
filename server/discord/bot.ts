@@ -19,12 +19,13 @@ export async function initializeBot(config: DiscordConfig) {
     // Validate the configuration
     const validatedConfig = discordConfig.parse(config);
     
-    // Create a new client with necessary intents
-    // Note: MessageContent and GuildMembers are privileged intents that need to be enabled in Discord Developer Portal
+    // Create a new client with necessary intents - adding privileged intents
     const client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,  // Privileged intent - needed for purge command
+        GatewayIntentBits.GuildMembers     // Privileged intent - needed for welcome messages
       ]
     });
 
