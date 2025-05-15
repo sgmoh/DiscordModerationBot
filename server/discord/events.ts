@@ -46,6 +46,32 @@ export function setupEvents(client: Client, config: DiscordConfig) {
 }
 
 /**
+ * Process custom emoji codes in a string, ensuring they render correctly
+ */
+function processCustomEmojis(text: string): string {
+  // Fix broken backslashes and formatting
+  let processed = text;
+  
+  // Match custom emoji format <:name:id> or similar formats
+  const emojiRegex = /<(a?):([a-zA-Z0-9_]+):(\d+)>/g;
+  
+  // Replace any escaped format with the correct format
+  processed = processed.replace(/\\?<:([a-zA-Z0-9_]+):(\d+)\\?>/g, '<:$1:$2>');
+  
+  // Also check for text versions like :emojiname:
+  processed = processed.replace(/:([a-zA-Z0-9_]+):/g, (match, name) => {
+    // If it's already part of a custom emoji format, leave it alone
+    if (processed.includes(`<:${name}:`)) {
+      return match;
+    }
+    // Otherwise, it might be a regular emoji reference
+    return match;
+  });
+  
+  return processed;
+}
+
+/**
  * Handles when a new member joins a guild
  */
 async function handleMemberJoin(member: GuildMember, config: DiscordConfig) {
@@ -90,11 +116,14 @@ async function handleMemberJoin(member: GuildMember, config: DiscordConfig) {
     log(`Selected channel for welcome message: #${welcomeChannel.name}`, 'discord');
     
     // Get the welcome message (use custom message if available)
-    const welcomeMessage = config.customSettings?.welcomeMessage || config.welcomeMessage;
+    let welcomeMessage = config.customSettings?.welcomeMessage || config.welcomeMessage;
+    
+    // Process the message to ensure custom emojis are properly formatted
+    welcomeMessage = processCustomEmojis(welcomeMessage);
     
     // Advanced welcome message with emoji support
     try {
-      // Method 1: Send the welcome message with proper emoji rendering
+      // Send the welcome message with proper emoji rendering
       await welcomeChannel.send({
         content: `<@${member.id}> ${welcomeMessage}`,
         allowedMentions: { users: [member.id] }
