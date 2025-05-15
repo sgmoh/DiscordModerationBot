@@ -52,9 +52,10 @@ async function handleMemberJoin(member: GuildMember, config: DiscordConfig) {
       return;
     }
     
-    // Send the welcome message
-    await channel.send(`${member} ${config.welcomeMessage}`);
-    log(`Sent welcome message to ${member.user.tag} in ${member.guild.name}`, 'discord');
+    // Send the welcome message (use custom message if available)
+    const welcomeMessage = config.customSettings?.welcomeMessage || config.welcomeMessage;
+    await channel.send(`${member} ${welcomeMessage}`);
+    log(`Sent welcome message to ${member.user.tag} in ${member.guild.name}: "${welcomeMessage}"`, 'discord');
     
   } catch (error) {
     log(`Error sending welcome message: ${error}`, 'discord');

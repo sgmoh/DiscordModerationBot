@@ -19,6 +19,8 @@ export function setupCommands(client: Client, config: DiscordConfig) {
     // Log available commands
     log(`Available commands:`, 'discord');
     log(`${config.prefix}purge [1-100] - Deletes specified number of messages in the channel`, 'discord');
+    log(`${config.prefix}setwelcome [message] - Sets a custom welcome message`, 'discord');
+    log(`${config.prefix}getwelcome - Shows the current welcome message`, 'discord');
   });
   
   log('Commands handler set up', 'discord');
