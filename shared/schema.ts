@@ -22,7 +22,13 @@ export const discordConfig = z.object({
   token: z.string().min(1, "Discord bot token is required"),
   clientId: z.string().min(1, "Discord client ID is required"),
   welcomeMessage: z.string().default("Welcome to immys server"),
-  prefix: z.string().default(".")
+  prefix: z.string().default("."),
+  // Store for custom settings that can be changed at runtime
+  customSettings: z.object({
+    welcomeMessage: z.string().default("Welcome to immys server"),
+  }).default({
+    welcomeMessage: "Welcome to immys server",
+  })
 });
 
 export type DiscordConfig = z.infer<typeof discordConfig>;

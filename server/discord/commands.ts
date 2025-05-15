@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import { log } from '../vite';
 import { type DiscordConfig } from '@shared/schema';
+import { handleSetWelcomeCommand, handleGetWelcomeCommand } from './welcomeCommands';
 
 export function setupCommands(client: Client, config: DiscordConfig) {
   // Register the command handler for all messages
@@ -57,11 +58,19 @@ async function handleCommands(message: Message, client: Client, config: DiscordC
       case 'purge':
         await handlePurgeCommand(message, args);
         break;
+      
+      case 'setwelcome':
+        await handleSetWelcomeCommand(message, args, config);
+        break;
+        
+      case 'getwelcome':
+        await handleGetWelcomeCommand(message, config);
+        break;
         
       // Add more commands here if needed
       default:
         // Unknown command
-        await message.reply(`Unknown command: ${commandName}. Available commands: purge`);
+        await message.reply(`Unknown command: ${commandName}. Available commands: purge, setwelcome, getwelcome`);
         break;
     }
   } catch (error) {
