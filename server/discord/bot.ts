@@ -39,6 +39,13 @@ export async function initializeBot(config: DiscordConfig) {
     await client.login(validatedConfig.token);
     log(`Discord bot logged in`, 'discord');
     
+    // Generate and log the invite link
+    const inviteLink = `https://discord.com/api/oauth2/authorize?client_id=${validatedConfig.clientId}&permissions=8&scope=bot`;
+    log(`--------------------------------------------------`, 'discord');
+    log(`BOT INVITE LINK: ${inviteLink}`, 'discord');
+    log(`Use this link to add the bot to your server`, 'discord');
+    log(`--------------------------------------------------`, 'discord');
+    
     return client;
   } catch (error) {
     log(`Failed to initialize Discord bot: ${error}`, 'discord');
